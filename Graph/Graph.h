@@ -3,42 +3,51 @@
 
 class Graph
 {
-	// all additional functions are located in "private" 
 private:
 	const ush MAX_SIZE = 512;
-	uint V, start, last;
 	struct Node
 	{
-		uint min_dist = INF,
-			used = 0,
-			degrees = 0;
-		int connections[512] = { INF };
+		long long x, y;
+		bool used = 0;
+		int min_dist = INT_MAX,
+			degrees = 0,
+			connections[512] = { INT_MAX };
 	};
 	Node* graph = new Node[MAX_SIZE];
+	uint V, start, last;
 
+	// all additional functions are located in "private" 
+	
 	// setup all private vars to default values
 	void reset(),
 
-		// find shortest way with comparison of dij
-		shortestPath(int& min_vertex),
-
 		// outputting the shortest way from START to FINISH (use if dij() is used befor)
-		printPrice(uint& price),
+		printPrice(),
 
 		// recursive utilite for topological sort
 		TSUtil(int n, stack<int>& _stack),
 
 		// find minimal cost edge of curr vertex
-		MinUV(uint& curr, uint& MINv, uint& MIdx, uint& LIdx);
+		MinUV(uint& curr, uint& MINv, uint& MIdx, uint& LIdx),
+		
+		// find leftmost point
+		FindLeftmostPoint(int&);
 
-	// returns true - eulerian path exist, otherwise - false
-	int detectStartEuler(),
+
+	// find shortest way with comparison of dij
+	int shortestPath(),
+		
+		// returns true - eulerian path exist, otherwise - false
+		detectStartEuler(),
 
 		// current graph have at list one connection - return true, otherwise - false
 		haveNeighbours(int curr = 0),
 
 		// return 1 if ham. path exist, otherwise 0
-		detectHamiltonPath();
+		detectHamiltonPath(),
+
+		//
+		Orientation(Node&, Node&, Node&);
 public:
 	// constructor of Graph class
 	Graph();
@@ -52,13 +61,12 @@ public:
 		// print matrix of connections with each node
 		printGraph(),
 
-		/// Breath First Searching
+		// Breath First Searching
 		bfs(),
 
 		// Depth First Searching
 		dfs(),
 
-		// required: setup all 0 to -1
 		// returns the value of the shortest way
 		dij(),
 
@@ -78,5 +86,16 @@ public:
 		SpanningTree(),
 
 		// biult minimum spanning tree by Prim's algorithm, for weighted edges
-		MinSpanningTreePrima();
+		MinSpanningTreePrima(),
+
+		// Convex hall by Jarvis
+		JarvisHall();
 };
+
+// Graph v1.1 Updates:
+// - .used parameter has bool type
+// - shortestPath() returns min. vertex index to dij(),
+//	instead of void return type and past func. logic
+// - dij() works correctly
+// - now printPrice() does not take an argument
+// - INT_MAX constant changed to INT_MAX

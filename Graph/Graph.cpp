@@ -7,29 +7,28 @@ Graph::Graph()
 #ifdef DEBUG
 	cout << "Graph is running.\n";
 #endif // DEBUG
-	this->init();
 }
+
 void Graph::reset()
 {
 	for (uint row = 0; row < this->V; ++row)
 	{
-		graph[row].min_dist = INF;
+		graph[row].min_dist = INT_MAX;
 		graph[row].used = false;
-		graph[row].degrees = 0;
+		graph[row].degrees = NULL;
+		graph[row].x = NULL;
+		graph[row].y = NULL;
 	}
 }
+
 void Graph::init(uint start, uint last)
 {
-#ifdef DEBUG
-	cout << "Start: init.\n";
-#endif // DEBUG
+	#ifdef DEBUG
+		cout << "Start: init.\n";
+	#endif // DEBUG
 
 	// opening file with input data of graph
-	fstream input;
-	input.open("input.txt");
-
-	/*if (!freopen("input.txt", "r", stdin))
-		cout << "Opening file \"input.txt\" failed\n";*/
+	ifstream input("input.txt", ios::in);
 
 	// input vertices count
 	input >> this->V;
@@ -49,15 +48,14 @@ void Graph::init(uint start, uint last)
 			if (graph[row].connections[col])
 				++graph[row].degrees;
 			else if (graph[row].connections[col] == -1)
-				graph[row].connections[col] = INF;
+				graph[row].connections[col] = INT_MAX;
 		}
 
-	input.close();
-
-#ifdef DEBUG
-	cout << "End: init.\n";
-#endif // DEBUG
+	#ifdef DEBUG
+		cout << "End: init.\n";
+	#endif // DEBUG
 }
+
 void Graph::printGraph()
 {
 	for (uint row = 0; row < this->V; ++row, cout << "]\n")
@@ -68,6 +66,7 @@ void Graph::printGraph()
 				cout << col + 1 << ' ';
 	}
 }
+
 void Graph::isComplete()
 {
 	uint in = 0, row = 0, col = 0, vcnt = 0;
@@ -81,6 +80,7 @@ void Graph::isComplete()
 	else
 		cout << "No. it isn't\n";
 }
+
 Graph::~Graph()
 {
 	delete[] this->graph;
@@ -88,6 +88,7 @@ Graph::~Graph()
 	cout << "Graph is destroyed\n";
 #endif // DEBUG
 }
+
 // Group First Serch algorithms (DONE)
 void Graph::bfs()
 {
@@ -120,6 +121,7 @@ void Graph::bfs()
 	cout << "End: bfs\n";
 #endif // DEBUG	
 }
+
 void Graph::dfs()
 {
 #ifdef DEBUG
@@ -148,13 +150,20 @@ void Graph::dfs()
 	cout << "End: dfs\n";
 #endif // DEBUG
 }
+
 // Group dij (DONE)
-void Graph::shortestPath(int& min_vertex)
+int Graph::shortestPath()
 {
-	for (uint i = 0; i < this->V; ++i)
-		if (graph[i].min_dist > (graph[min_vertex].min_dist + graph[min_vertex].connections[i]))
-			graph[i].min_dist = graph[min_vertex].min_dist + graph[min_vertex].connections[i];
+	int min_dist = INT_MAX, min_vertex = -1;
+
+	for (uint i = 0; i < V; ++i)
+		if (!graph[i].used && (graph[i].min_dist <= min_dist))
+			min_dist = graph[i].min_dist,
+			min_vertex = i;
+
+	return min_vertex;
 }
+
 void Graph::dij()
 {
 #ifdef DEBUG
@@ -162,40 +171,40 @@ void Graph::dij()
 #endif // DEBUG
 
 	graph[this->start].min_dist = 0;
-	for (int min_dist = 0, min_vertex = this->start; min_dist < INF;)
+	for (uint i = 0; i < this->V - 1; ++i)
 	{
+		int min_vertex = shortestPath();
 		graph[min_vertex].used = true;
 
-		shortestPath(min_vertex);
-		min_dist = INF;
-		for (uint col = 0; col < this->V; ++col)
-			if (!graph[col].used && (graph[col].min_dist < (uint)min_dist))
-			{
-				min_dist = graph[col].min_dist;
-				min_vertex = col;
-			}
+		// for each vertex: setup new price
+		for (uint i = 0; i < this->V; ++i)
+			if (!graph[i].used && graph[min_vertex].connections[i] != INT_MAX && graph[min_vertex].connections[i] &&
+				(graph[i].min_dist > graph[min_vertex].min_dist + graph[min_vertex].connections[i]))
+				graph[i].min_dist = graph[min_vertex].min_dist + graph[min_vertex].connections[i];
 	}
 
-	this->printPrice(graph[this->last].min_dist);
+	this->printPrice();
 	this->reset();
 
 #ifdef DEBUG
 	cout << "End: dij\n";
 #endif // DEBUG
 }
-void Graph::printPrice(uint& price)
+
+void Graph::printPrice()
 {
-	if (price >= INF || !price || !this->start && !this->last)
+	if (graph[this->last].min_dist >= INT_MAX || graph[this->last].min_dist < 0)
 		cout << "IMPOSSIBLE\n";
 	else
-		cout << "Shortest path from town #" << this->start << " to #" << this->last << " one = " << price << "\n";
+		cout << "Shortest path from town #" << this->start + 1 << " to #" << this->last + 1 << " one = " << graph[this->last].min_dist << "\n";
 }
+
 // Group Eulerian Path (DONE)
 int Graph::detectStartEuler()
 {
 	for (unsigned int row = 0; row < this->V; ++row)
 		for (unsigned int col = 0; col < this->V; ++col)
-			if ((graph[row].connections[col] < INF) && graph[row].connections[col])
+			if ((graph[row].connections[col] < INT_MAX) && graph[row].connections[col])
 				++graph[row].degrees;
 
 	int odd = 0, even = 0, odd_ver = -1, even_ver = -1;
@@ -229,6 +238,7 @@ int Graph::haveNeighbours(int curr)
 			return true;
 	return false;
 }
+
 void Graph::findEulerianPath()
 {
 #ifdef DEBUG
@@ -266,6 +276,7 @@ void Graph::findEulerianPath()
 	cout << "End: findEulerianPath\n";
 #endif // DEBUG
 }
+
 // Group Hamilton Path
 int Graph::detectHamiltonPath()
 {
@@ -273,6 +284,7 @@ int Graph::detectHamiltonPath()
 	return 0;
 	return 1;
 }
+
 void Graph::findHamiltonPath()
 {
 #ifdef DEBUG
@@ -296,6 +308,7 @@ void Graph::findHamiltonPath()
 	cout << "End: findHamiltonPath\n";
 #endif // DEBUG
 }
+
 // Group Topological Sort (DONE)
 void Graph::TSUtil(int n, stack<int>& _stack)
 {
@@ -306,6 +319,7 @@ void Graph::TSUtil(int n, stack<int>& _stack)
 
 	_stack.push(n);
 }
+
 void Graph::TopSort()
 {
 #ifdef DEBUG
@@ -329,25 +343,28 @@ void Graph::TopSort()
 	cout << "\nEnd: TopSort\n";
 #endif // DEBUG
 }
+
 // Group Tree
 void Graph::SpanningTree()
 {
 	this->dfs();
 }
+
 void Graph::MinUV(uint& curr, uint& MINv, uint& MIdx, uint& LIdx)
 {
-	MINv = INF, MIdx = -1;
+	MINv = INT_MAX, MIdx = -1;
 	for (uint i = 0; i < this->V; ++i)
 		if (graph[curr].connections[i] && !graph[i].used && (MINv > (uint)graph[curr].connections[i]))
 			MINv = graph[curr].connections[i], MIdx = i, LIdx = curr;
 }
+
 void Graph::MinSpanningTreePrima()
 {
 #ifdef DEBUG
 	cout << "Start: MinSpanningTreePrima\n";
 #endif // DEBUG
 
-	uint ver = 0, MINcost = 0, MINv = INF, MIdx = INF, LIdx = this->start;
+	uint ver = 0, MINcost = 0, MINv = INT_MAX, MIdx = INT_MAX, LIdx = this->start;
 	deque<int> __way__;
 	__way__.push_front(LIdx);
 
@@ -380,5 +397,74 @@ void Graph::MinSpanningTreePrima()
 
 #ifdef DEBUG
 	cout << "End: MinSpanningTreePrima\n";
+#endif // DEBUG
+}
+
+void Graph::FindLeftmostPoint(int& left)
+{
+	int* tmp = &left;
+	for (int i = 1; i < V; i++)
+		if (graph[i].x < graph[*tmp].x)
+			*tmp = i;
+}
+
+int Graph::Orientation(Node& currpoint, Node& mid, Node& next)
+{
+	int angel = (mid.y - currpoint.y) * (next.x - mid.x) -
+		(mid.x - currpoint.x) * (next.y - mid.y);
+
+	// colinear or clock either counterclock wise 
+	return (!angel ? 0 : (angel > 0) ? 1 : 2);
+}
+
+void Graph::JarvisHall()
+{
+#ifdef DEBUG
+	cout << "Start: JarvisHall\n";
+#endif // DEBUG
+	
+	// input (x, y) coordinates
+	for (int i = 0; i < V; ++i)
+		cin >> graph[i].x >> graph[i].y;
+
+	// if points count 
+	if (V < 3)
+	{
+		cerr << "Error: no enough points.\n";
+		return;
+	}
+
+	// find leftmost point
+
+	int left = 0;
+	FindLeftmostPoint(left);
+
+	// initilize hull, current point, next point
+	vector<Node> hull;
+	int currPoint = left, next;
+	do
+	{
+		// add current point to Convex Hull
+		hull.push_back(graph[currPoint]);
+
+		// find next correct point
+		next = (currPoint + 1) % V;
+		for (int i = 0; i < V; ++i)
+			if (Orientation(graph[currPoint], graph[i], graph[next]) == 2)
+				next = i;
+
+		// set current point to next
+		currPoint = next;
+	} while (currPoint != left); // While we don't come to start point 
+
+	// print result
+	for (int i = 0, len = hull.size(); i < len; ++i)
+		cout << "(" << hull[i].x << ", " << hull[i].y << ") -> ";
+	cout << "(" << hull[0].x << ", " << hull[0].y << ")\n";
+
+	this->reset();
+
+#ifdef DEBUG
+	cout << "End: JarvisHall\n";
 #endif // DEBUG
 }
